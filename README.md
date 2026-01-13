@@ -66,6 +66,44 @@ SMART_CACHE_ASYNC_PROCESSING=true
 SMART_CACHE_BATCH_SIZE=100  # Buffer 100 queries before inserting
 ```
 
+### Driver-Specific Optimizations
+
+The package automatically detects your cache driver and provides specific optimizations:
+
+**Redis**:
+- Memory usage analysis with fragmentation ratio
+- Eviction tracking (evicted/expired keys)
+- Key pattern analysis
+- TTL distribution monitoring
+- Hit/miss ratio from Redis stats
+
+**Memcached**:
+- Memory usage and limits
+- Eviction statistics
+- Item counts and reclaimed items
+- Server-level hit rates
+
+**File Cache**:
+- Disk usage tracking
+- File size distribution analysis
+- Largest cache files identification
+- Disk space monitoring
+
+Configure driver features in `config/smart-cache.php`:
+```php
+'drivers' => [
+    'redis' => [
+        'analyze_memory' => true,
+        'track_evictions' => true,
+        'monitor_key_patterns' => true,
+    ],
+    'file' => [
+        'track_disk_usage' => true,
+        'analyze_file_sizes' => true,
+    ],
+],
+```
+
 ## Usage
 
 ### Dashboard

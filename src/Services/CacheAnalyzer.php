@@ -7,16 +7,59 @@ use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Facades\DB;
 use SmartCache\Analyzer\Models\CacheMetric;
 use SmartCache\Analyzer\Models\QueryAnalysis;
+use SmartCache\Analyzer\Services\Drivers\CacheDriverAnalyzer;
+use SmartCache\Analyzer\Services\Drivers\RedisDriverAnalyzer;
+use SmartCache\Analyzer\Services\Drivers\FileDriverAnalyzer;
+use SmartCache\Analyzer\Services\Drivers\MemcachedDriverAnalyzer;
 
 class CacheAnalyzer
 {
     protected Repository $cache;
     protected DatabaseManager $db;
+    protected ?CacheDriverAnalyzer $driverAnalyzer = null;
 
     public function __construct(Repository $cache, DatabaseManager $db)
     {
         $this->cache = $cache;
         $this->db = $db;
+        $this->initializeDriverAnalyzer();
+    }
+
+    /**
+     * Initialize driver-specific analyzer.
+     */
+    protected function initializeDriverAnalyzer(): void
+    {
+        $store = $this->cache->getStore();
+        $driverName = $this->getDriverName($store);
+        $driverConfig = config("smart-cache.drivers.{$driverName}", []);
+        
+        $this->driverAnalyzer = match($driverName) {
+            'redis' => new RedisDriverAnalyzer($store, $driverConfig),
+            'file' => new FileDriverAnalyzer($store, $driverConfig),
+            'memcached' => new MemcachedDriverAnalyzer($store, $driverConfig),
+            default => null,
+        };
+    }
+
+    /**
+     * Get cache driver name.
+     */
+    protected function getDriverName($store): string
+    {
+        $class = get_class($store);
+        
+        if (str_contains($class, 'Redis')) {
+            return 'redis';
+        } elseif (str_contains($class, 'File')) {
+            return 'file';
+        } elseif (str_contains($class, 'Memcached')) {
+            return 'memcached';
+        } elseif (str_contains($class, 'Database')) {
+            return 'database';
+        }
+        
+        return 'unknown';
     }
 
     /**
@@ -31,7 +74,7 @@ class CacheAnalyzer
         $misses = $metrics->sum('misses');
         $total = $hits + $misses;
 
-        return [
+        $stats = [
             'hit_ratio' => $total > 0 ? round(($hits / $total) * 100, 2) : 0,
             'total_hits' => $hits,
             'total_misses' => $misses,
@@ -39,6 +82,14 @@ class CacheAnalyzer
             'memory_usage' => $this->getCacheMemoryUsage(),
             'keys_count' => $this->getCacheKeysCount(),
         ];
+
+        // Add driver-specific stats
+        if ($this->driverAnalyzer) {
+            $stats['driver'] = $this->driverAnalyzer->getDriverName();
+            $stats['driver_stats'] = $this->driverAnalyzer->getStats();
+        }
+
+        return $stats;
     }
 
     /**
@@ -168,6 +219,16 @@ class CacheAnalyzer
      */
     protected function getCacheMemoryUsage(): string
     {
+        if ($this->driverAnalyzer) {
+            $memoryInfo = $this->driverAnalyzer->getMemoryUsage();
+            if ($memoryInfo) {
+                return $memoryInfo['used_memory_human'] 
+                    ?? $memoryInfo['bytes_used_human'] 
+                    ?? $memoryInfo['total_size_human'] 
+                    ?? 'N/A';
+            }
+        }
+
         try {
             $store = $this->cache->getStore();
             
@@ -188,6 +249,13 @@ class CacheAnalyzer
      */
     protected function getCacheKeysCount(): int
     {
+        if ($this->driverAnalyzer) {
+            $stats = $this->driverAnalyzer->getStats();
+            if (isset($stats['keys_count'])) {
+                return $stats['keys_count'];
+            }
+        }
+
         try {
             $store = $this->cache->getStore();
             

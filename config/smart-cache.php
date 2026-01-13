@@ -163,6 +163,37 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cache Driver Optimizations
+    |--------------------------------------------------------------------------
+    |
+    | Driver-specific features and optimizations.
+    |
+    */
+    'drivers' => [
+        'redis' => [
+            'analyze_memory' => true,
+            'track_evictions' => true,
+            'monitor_key_patterns' => true,
+            'analyze_ttl_distribution' => true,
+        ],
+        'memcached' => [
+            'analyze_memory' => true,
+            'track_evictions' => true,
+            'monitor_hit_rate' => true,
+        ],
+        'file' => [
+            'track_disk_usage' => true,
+            'analyze_file_sizes' => true,
+            'monitor_cleanup_frequency' => true,
+        ],
+        'database' => [
+            'track_query_count' => true,
+            'monitor_lock_wait' => true,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default TTL Suggestions
     |--------------------------------------------------------------------------
     |
