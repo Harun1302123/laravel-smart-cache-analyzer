@@ -55,6 +55,7 @@ class SmartCacheServiceProvider extends ServiceProvider
                 AnalyzeCacheCommand::class,
                 CleanupCacheCommand::class,
                 WarmCacheCommand::class,
+                \SmartCache\Analyzer\Console\Commands\AutoApplyCommand::class,
             ]);
         }
 

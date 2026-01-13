@@ -131,6 +131,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Auto-Apply Recommendations
+    |--------------------------------------------------------------------------
+    |
+    | Automatically apply caching recommendations based on analysis.
+    |
+    */
+    'auto_apply' => [
+        'enabled' => env('SMART_CACHE_AUTO_APPLY', false),
+        'priority_threshold' => env('SMART_CACHE_AUTO_APPLY_THRESHOLD', 'high'), // 'high', 'medium', 'low'
+        'require_approval' => env('SMART_CACHE_AUTO_APPLY_APPROVAL', true),
+        'dry_run' => env('SMART_CACHE_AUTO_APPLY_DRY_RUN', true),
+        'max_queries_per_run' => env('SMART_CACHE_AUTO_APPLY_MAX', 10),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Excluded Tables
     |--------------------------------------------------------------------------
     |

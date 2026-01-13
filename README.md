@@ -131,6 +131,14 @@ Warm cache:
 php artisan cache:warm
 ```
 
+Auto-apply recommendations:
+```bash
+php artisan cache:auto-apply --sync         # Sync and process recommendations
+php artisan cache:auto-apply --list         # List pending recommendations
+php artisan cache:auto-apply --approve=1,2  # Approve specific recommendations
+php artisan cache:auto-apply --dry-run      # Preview changes without applying
+```
+
 ### Programmatic Usage
 
 ```php
@@ -144,6 +152,30 @@ SmartCache::analyzeQuery($query);
 
 // Get caching recommendations
 $recommendations = SmartCache::getRecommendations();
+
+// Auto-apply service
+$autoApply = app(\SmartCache\Analyzer\Services\AutoApplyService::class);
+$autoApply->syncRecommendations();
+$result = $autoApply->processRecommendations();
+```
+
+### Auto-Apply Recommendations
+
+Enable automatic caching of queries based on analysis:
+
+```env
+SMART_CACHE_AUTO_APPLY=true
+SMART_CACHE_AUTO_APPLY_THRESHOLD=high      # Only high-priority queries
+SMART_CACHE_AUTO_APPLY_APPROVAL=true       # Require manual approval first
+SMART_CACHE_AUTO_APPLY_DRY_RUN=false       # Set to false to apply changes
+SMART_CACHE_AUTO_APPLY_MAX=10              # Max queries per run
+```
+
+**Workflow:**
+1. Sync recommendations: `php artisan cache:auto-apply --sync`
+2. Review pending: `php artisan cache:auto-apply --list`
+3. Approve selected: `php artisan cache:auto-apply --approve=1,2,3`
+4. Auto-apply approved: `php artisan cache:auto-apply`
 ```
 
 ## How It Works
