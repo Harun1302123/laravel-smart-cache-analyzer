@@ -44,14 +44,15 @@ class CacheAnalyzer
     /**
      * Analyze a query for caching potential.
      */
-    public function analyzeQuery(string $sql, float $executionTime): void
+    public function analyzeQuery(string $signature, float $executionTime, ?string $normalizedQuery = null): void
     {
-        $hash = md5($sql);
+        $hash = md5($signature);
+        $displayQuery = $normalizedQuery ?? $signature;
         
         QueryAnalysis::updateOrCreate(
             ['query_hash' => $hash],
             [
-                'query' => $sql,
+                'query' => $displayQuery,
                 'execution_count' => DB::raw('execution_count + 1'),
                 'total_time' => DB::raw("total_time + {$executionTime}"),
                 'avg_time' => DB::raw("(total_time + {$executionTime}) / (execution_count + 1)"),

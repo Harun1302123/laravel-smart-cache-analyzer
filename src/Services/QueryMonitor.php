@@ -51,11 +51,14 @@ class QueryMonitor
             return;
         }
 
-        // Normalize query (remove specific values)
+        // Generate query signature (normalized pattern without values)
+        $signature = $this->generateSignature($sql);
+        
+        // Normalize query with bindings for display/debugging
         $normalizedSql = $this->normalizeQuery($sql, $bindings);
 
-        // Analyze the query
-        $this->analyzer->analyzeQuery($normalizedSql, $time);
+        // Analyze the query using signature for grouping
+        $this->analyzer->analyzeQuery($signature, $time, $normalizedSql);
     }
 
     /**
@@ -79,13 +82,50 @@ class QueryMonitor
      */
     protected function normalizeQuery(string $sql, array $bindings): string
     {
-        // Replace binding placeholders with generic markers
-        $normalized = preg_replace('/\?/', '?', $sql);
+        $normalized = $sql;
+        
+        // Replace bindings with their types for better readability
+        foreach ($bindings as $binding) {
+            if (is_null($binding)) {
+                $normalized = preg_replace('/\?/', 'NULL', $normalized, 1);
+            } elseif (is_numeric($binding)) {
+                $normalized = preg_replace('/\?/', ':number', $normalized, 1);
+            } elseif (is_string($binding)) {
+                $normalized = preg_replace('/\?/', ':string', $normalized, 1);
+            } else {
+                $normalized = preg_replace('/\?/', ':value', $normalized, 1);
+            }
+        }
         
         // Remove extra whitespace
         $normalized = preg_replace('/\s+/', ' ', $normalized);
         
         return trim($normalized);
+    }
+
+    /**
+     * Generate a unique signature for query pattern matching.
+     */
+    protected function generateSignature(string $sql): string
+    {
+        // Normalize the SQL structure
+        $signature = $sql;
+        
+        // Replace all numeric literals with placeholder
+        $signature = preg_replace('/\b\d+\b/', '?', $signature);
+        
+        // Replace string literals with placeholder
+        $signature = preg_replace("/\'[^\']*\'/", '?', $signature);
+        $signature = preg_replace('/\"[^\"]*\"/i', '?', $signature);
+        
+        // Replace IN clauses with normalized version
+        $signature = preg_replace('/in\s*\([^\)]+\)/i', 'IN (?)', $signature);
+        
+        // Normalize whitespace
+        $signature = preg_replace('/\s+/', ' ', $signature);
+        $signature = strtolower(trim($signature));
+        
+        return $signature;
     }
 
     /**
