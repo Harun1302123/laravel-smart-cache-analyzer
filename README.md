@@ -41,7 +41,29 @@ return [
     'dashboard_path' => 'smart-cache',
     'slow_query_threshold' => 100, // milliseconds
     'analyze_interval' => 3600, // seconds
+    
+    // Performance Optimizations
+    'sampling_rate' => env('SMART_CACHE_SAMPLING_RATE', 10), // Analyze 10% of queries
+    'async_processing' => env('SMART_CACHE_ASYNC_PROCESSING', false), // Queue analysis
+    'batch_size' => env('SMART_CACHE_BATCH_SIZE', 50), // Buffer queries before DB write
 ];
+```
+
+### Performance Tuning
+
+**Sampling Rate**: Reduce overhead by analyzing only a percentage of queries:
+```env
+SMART_CACHE_SAMPLING_RATE=10  # Analyze 10% of queries (recommended for high-traffic apps)
+```
+
+**Async Processing**: Queue query analysis to avoid blocking requests:
+```env
+SMART_CACHE_ASYNC_PROCESSING=true
+```
+
+**Batch Processing**: Buffer queries and bulk insert to reduce database writes:
+```env
+SMART_CACHE_BATCH_SIZE=100  # Buffer 100 queries before inserting
 ```
 
 ## Usage

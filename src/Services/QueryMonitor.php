@@ -3,13 +3,15 @@
 namespace SmartCache\Analyzer\Services;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
+use SmartCache\Analyzer\Jobs\AnalyzeQueryJob;
 
 class QueryMonitor
 {
     protected CacheAnalyzer $analyzer;
     protected array $config;
     protected bool $monitoring = false;
+    protected array $queryBuffer = [];
+    protected int $bufferCount = 0;
 
     public function __construct(CacheAnalyzer $analyzer, array $config)
     {
@@ -38,6 +40,9 @@ class QueryMonitor
      */
     public function stop(): void
     {
+        // Flush any remaining buffered queries
+        $this->flushBuffer();
+        
         $this->monitoring = false;
     }
 
@@ -46,6 +51,11 @@ class QueryMonitor
      */
     protected function handleQuery(string $sql, float $time, array $bindings): void
     {
+        // Apply sampling rate
+        if (!$this->shouldSampleQuery()) {
+            return;
+        }
+
         // Skip if query is from excluded tables
         if ($this->shouldExcludeQuery($sql)) {
             return;
@@ -57,8 +67,83 @@ class QueryMonitor
         // Normalize query with bindings for display/debugging
         $normalizedSql = $this->normalizeQuery($sql, $bindings);
 
-        // Analyze the query using signature for grouping
-        $this->analyzer->analyzeQuery($signature, $time, $normalizedSql);
+        // Process query based on configuration
+        if ($this->config['async_processing'] ?? false) {
+            $this->queueQueryAnalysis($signature, $time, $normalizedSql);
+        } elseif ($this->config['batch_size'] ?? 0 > 1) {
+            $this->bufferQueryAnalysis($signature, $time, $normalizedSql);
+        } else {
+            // Synchronous processing
+            $this->analyzer->analyzeQuery($signature, $time, $normalizedSql);
+        }
+    }
+
+    /**
+     * Determine if query should be sampled based on sampling rate.
+     */
+    protected function shouldSampleQuery(): bool
+    {
+        $samplingRate = $this->config['sampling_rate'] ?? 100;
+        
+        if ($samplingRate >= 100) {
+            return true;
+        }
+        
+        return (mt_rand(1, 100) <= $samplingRate);
+    }
+
+    /**
+     * Queue query analysis for async processing.
+     */
+    protected function queueQueryAnalysis(string $signature, float $time, string $normalizedSql): void
+    {
+        try {
+            AnalyzeQueryJob::dispatch($signature, $time, $normalizedSql);
+        } catch (\Exception $e) {
+            // Fallback to synchronous if queue fails
+            $this->analyzer->analyzeQuery($signature, $time, $normalizedSql);
+        }
+    }
+
+    /**
+     * Buffer query for batch processing.
+     */
+    protected function bufferQueryAnalysis(string $signature, float $time, string $normalizedSql): void
+    {
+        $this->queryBuffer[] = [
+            'signature' => $signature,
+            'time' => $time,
+            'normalized_sql' => $normalizedSql,
+        ];
+        
+        $this->bufferCount++;
+        
+        $batchSize = $this->config['batch_size'] ?? 50;
+        
+        if ($this->bufferCount >= $batchSize) {
+            $this->flushBuffer();
+        }
+    }
+
+    /**
+     * Flush buffered queries to database.
+     */
+    protected function flushBuffer(): void
+    {
+        if (empty($this->queryBuffer)) {
+            return;
+        }
+
+        foreach ($this->queryBuffer as $query) {
+            $this->analyzer->analyzeQuery(
+                $query['signature'],
+                $query['time'],
+                $query['normalized_sql']
+            );
+        }
+
+        $this->queryBuffer = [];
+        $this->bufferCount = 0;
     }
 
     /**

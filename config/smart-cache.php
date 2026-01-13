@@ -69,6 +69,38 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Query Sampling Rate
+    |--------------------------------------------------------------------------
+    |
+    | Percentage of queries to analyze (1-100). Lower values reduce overhead.
+    | For example, 10 means only 10% of queries will be analyzed.
+    |
+    */
+    'sampling_rate' => env('SMART_CACHE_SAMPLING_RATE', 10),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Async Processing
+    |--------------------------------------------------------------------------
+    |
+    | Enable queued processing for query analysis to reduce real-time overhead.
+    |
+    */
+    'async_processing' => env('SMART_CACHE_ASYNC_PROCESSING', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Batch Insert Size
+    |--------------------------------------------------------------------------
+    |
+    | Number of queries to buffer before bulk inserting. Higher values reduce
+    | database writes but increase memory usage.
+    |
+    */
+    'batch_size' => env('SMART_CACHE_BATCH_SIZE', 50),
+
+    /*
+    |--------------------------------------------------------------------------
     | Data Retention
     |--------------------------------------------------------------------------
     |
