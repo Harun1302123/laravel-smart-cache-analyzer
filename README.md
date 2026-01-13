@@ -5,11 +5,14 @@ Intelligent cache analysis and optimization for Laravel applications. Automatica
 ## Features
 
 - 🔍 **Auto-detect Cacheable Queries** - Identify slow and repeated queries that should be cached
-- 📊 **Cache Analytics Dashboard** - Visual metrics showing cache effectiveness
+- 📊 **Real-Time Dashboard** - WebSocket support with Vue/React components for live updates
 - 🎯 **Smart Expiration Recommendations** - Data-driven suggestions for optimal TTLs
 - 🔥 **Cache Warming** - Pre-populate cache before expiration
 - 🧹 **Dead Cache Cleanup** - Identify and remove unused cache keys
 - 💰 **Performance Metrics** - Track database load reduction and cost savings
+- 📈 **Prometheus Exporter** - Export metrics for Grafana and monitoring tools
+- 🎛️ **Driver-Specific Analytics** - Redis, Memcached, and File cache specialized monitoring
+- 🤖 **Auto-Apply Recommendations** - Automatically implement caching with approval workflow
 
 ## Installation
 
@@ -17,6 +20,9 @@ Install via Composer:
 
 ```bash
 composer require harun1302123/laravel-smart-cache-analyzer
+
+# Optional: Install frontend components for real-time dashboard
+npm install @harun1302123/laravel-smart-cache-dashboard
 ```
 
 Publish the configuration:
@@ -113,6 +119,121 @@ Access the analytics dashboard at:
 ```
 http://your-app.test/smart-cache
 ```
+
+### Real-Time Dashboard with Vue/React
+
+**Vue 3 Component:**
+
+```vue
+<template>
+  <SmartCacheDashboard 
+    api-url="/smart-cache"
+    websocket-url="ws://localhost:6001"
+    :refresh-interval="5000"
+  />
+</template>
+
+<script setup>
+import SmartCacheDashboard from '@harun1302123/laravel-smart-cache-dashboard/vue';
+</script>
+```
+
+**React Component:**
+
+```jsx
+import SmartCacheDashboard from '@harun1302123/laravel-smart-cache-dashboard/react';
+
+function App() {
+  return (
+    <SmartCacheDashboard 
+      apiUrl="/smart-cache"
+      websocketUrl="ws://localhost:6001"
+      refreshInterval={5000}
+    />
+  );
+}
+```
+
+**Features:**
+- ✅ Real-time stats updates via WebSocket
+- ✅ Automatic fallback to polling if WebSocket unavailable
+- ✅ Live recommendations display
+- ✅ Connection status indicator
+- ✅ Responsive design
+
+### Prometheus Metrics
+
+Export metrics for Grafana or other monitoring tools:
+
+```
+GET http://your-app.test/_metrics/smart-cache
+```
+
+**Sample metrics:**
+
+```prometheus
+# HELP smart_cache_hit_ratio Cache hit ratio percentage
+# TYPE smart_cache_hit_ratio gauge
+smart_cache_hit_ratio 87.5
+
+# HELP smart_cache_hits_total Total cache hits
+# TYPE smart_cache_hits_total counter
+smart_cache_hits_total 12450
+
+# HELP smart_cache_memory_bytes Memory usage in bytes
+# TYPE smart_cache_memory_bytes gauge
+smart_cache_memory_bytes{driver="redis"} 15728640
+```
+
+**Grafana Setup:**
+
+1. Add Prometheus data source in Grafana
+2. Configure scraping of `/_metrics/smart-cache` endpoint
+3. Import pre-built dashboard (coming soon) or create custom panels
+
+### WebSocket Broadcasting Setup
+
+Enable real-time updates by configuring Laravel Broadcasting:
+
+**1. Install Laravel Echo and Pusher:**
+
+```bash
+composer require pusher/pusher-php-server
+npm install --save laravel-echo pusher-js
+```
+
+**2. Configure Broadcasting (.env):**
+
+```env
+BROADCAST_DRIVER=pusher
+SMART_CACHE_BROADCASTING_ENABLED=true
+
+PUSHER_APP_ID=your-app-id
+PUSHER_APP_KEY=your-app-key
+PUSHER_APP_SECRET=your-app-secret
+PUSHER_APP_CLUSTER=mt1
+```
+
+**3. Initialize Laravel Echo (resources/js/app.js):**
+
+```js
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+window.Pusher = Pusher;
+window.Echo = new Echo({
+    broadcaster: 'pusher',
+    key: process.env.MIX_PUSHER_APP_KEY,
+    cluster: process.env.MIX_PUSHER_APP_CLUSTER,
+    forceTLS: true
+});
+```
+
+**4. Listen for Events:**
+
+The package automatically broadcasts:
+- `CacheStatsUpdated` event on channel `smart-cache-stats`
+- `NewRecommendation` event on channel `smart-cache-recommendations`
 
 ### CLI Commands
 

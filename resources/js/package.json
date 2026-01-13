@@ -1,0 +1,56 @@
+{
+  "name": "@harun1302123/laravel-smart-cache-dashboard",
+  "version": "1.0.0",
+  "description": "Vue/React components for Laravel Smart Cache Analyzer real-time dashboard",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "laravel",
+    "cache",
+    "dashboard",
+    "vue",
+    "react",
+    "real-time",
+    "websocket"
+  ],
+  "author": "MD HARUNUR RASHID <ahmharunurrashid@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Harun1302123/laravel-smart-cache-analyzer.git"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0",
+    "vue": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "rollup": "^4.9.6",
+    "rollup-plugin-vue": "^6.0.0",
+    "vue": "^3.4.0"
+  }
+}

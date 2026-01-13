@@ -147,6 +147,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Real-Time Dashboard
+    |--------------------------------------------------------------------------
+    |
+    | Configure WebSocket broadcasting for real-time dashboard updates.
+    | Requires Laravel Broadcasting and Pusher or other WebSocket driver.
+    |
+    */
+
+    'broadcasting' => [
+        'enabled' => env('SMART_CACHE_BROADCASTING_ENABLED', false),
+        'stats_update_interval' => env('SMART_CACHE_STATS_UPDATE_INTERVAL', 5), // seconds
+        'broadcast_recommendations' => env('SMART_CACHE_BROADCAST_RECOMMENDATIONS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Excluded Tables
     |--------------------------------------------------------------------------
     |

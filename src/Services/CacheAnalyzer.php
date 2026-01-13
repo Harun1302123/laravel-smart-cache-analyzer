@@ -11,6 +11,7 @@ use SmartCache\Analyzer\Services\Drivers\CacheDriverAnalyzer;
 use SmartCache\Analyzer\Services\Drivers\RedisDriverAnalyzer;
 use SmartCache\Analyzer\Services\Drivers\FileDriverAnalyzer;
 use SmartCache\Analyzer\Services\Drivers\MemcachedDriverAnalyzer;
+use SmartCache\Analyzer\Broadcasting\CacheStatsUpdated;
 
 class CacheAnalyzer
 {
@@ -87,6 +88,11 @@ class CacheAnalyzer
         if ($this->driverAnalyzer) {
             $stats['driver'] = $this->driverAnalyzer->getDriverName();
             $stats['driver_stats'] = $this->driverAnalyzer->getStats();
+        }
+
+        // Broadcast stats if enabled
+        if (config('smart-cache.broadcasting.enabled', false)) {
+            event(new CacheStatsUpdated($stats));
         }
 
         return $stats;

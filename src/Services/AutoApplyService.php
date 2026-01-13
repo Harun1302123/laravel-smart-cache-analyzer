@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use SmartCache\Analyzer\Models\CacheRecommendation;
 use SmartCache\Analyzer\Models\QueryAnalysis;
+use SmartCache\Analyzer\Broadcasting\NewRecommendation;
 
 class AutoApplyService
 {
@@ -170,7 +171,7 @@ class AutoApplyService
             $existing = CacheRecommendation::where('query_hash', $hash)->first();
             
             if (!$existing) {
-                CacheRecommendation::create([
+                $newRecommendation = CacheRecommendation::create([
                     'query_hash' => $hash,
                     'query' => $rec['query'],
                     'priority' => $rec['priority'],
@@ -179,6 +180,17 @@ class AutoApplyService
                     'potential_savings' => $rec['potential_savings'],
                     'status' => 'pending',
                 ]);
+                
+                // Broadcast new recommendation if enabled
+                if (config('smart-cache.broadcasting.broadcast_recommendations', true)) {
+                    event(new NewRecommendation([
+                        'id' => $newRecommendation->id,
+                        'query_hash' => $newRecommendation->query_hash,
+                        'priority' => $newRecommendation->priority,
+                        'suggested_ttl' => $newRecommendation->suggested_ttl,
+                        'reason' => $newRecommendation->reason,
+                    ]));
+                }
                 
                 $synced++;
             }
